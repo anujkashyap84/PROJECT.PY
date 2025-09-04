@@ -1,0 +1,88 @@
+import sqlite3
+from tkinter import Tk, Label, Entry, Button, messagebox
+
+def create_db():
+    """Create the SQLite database and student table."""
+    conn = sqlite3.connect("students.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS students (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            roll_number TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+def add_student(name, roll_number, password):
+    """Add a student record to the database."""
+    try:
+        conn = sqlite3.connect("students.db")
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO students (name, roll_number, password) VALUES (?, ?, ?)",
+            (name, roll_number, password),
+        )
+        conn.commit()
+        conn.close()
+        messagebox.showinfo("Success", "Student added successfully!")
+    except sqlite3.IntegrityError:
+        messagebox.showerror("Error", "Roll number already exists!")
+
+def view_students():
+    """Display all student records."""
+    conn = sqlite3.connect("students.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM students")
+    records = cursor.fetchall()
+    conn.close()
+    
+    if not records:
+        messagebox.showinfo("Info", "No students found.")
+        return
+
+    student_list = "\n".join(
+        [f"ID: {r[0]}, Name: {r[1]}, Roll: {r[2]}" for r in records]
+    )
+    messagebox.showinfo("Student Records", student_list)
+
+def main():
+    """Main function to run the tkinter GUI."""
+    create_db()
+
+    # Initialize the main tkinter window
+    root = Tk()
+    root.title("Student Login Info")
+    root.geometry("400x300")
+
+    # Labels and Entry widgets
+    Label(root, text="Student Name:").grid(row=0, column=0, padx=10, pady=10)
+    name_entry = Entry(root, width=30)
+    name_entry.grid(row=0, column=1, padx=10, pady=10)
+
+    Label(root, text="Roll Number:").grid(row=1, column=0, padx=10, pady=10)
+    roll_entry = Entry(root, width=30)
+    roll_entry.grid(row=1, column=1, padx=10, pady=10)
+
+    Label(root, text="Password:").grid(row=2, column=0, padx=10, pady=10)
+    password_entry = Entry(root, width=30, show="*")
+    password_entry.grid(row=2, column=1, padx=10, pady=10)
+
+    # Buttons
+    Button(root, text="Add Student", command=lambda: add_student(
+        name_entry.get(), roll_entry.get(), password_entry.get()
+    )).grid(row=3, column=0, columnspan=2, pady=10)
+
+    Button(root, text="View Students", command=view_students).grid(
+        row=4, column=0, columnspan=2, pady=10
+    )
+
+    # Run the tkinter main loop
+    root.mainloop()
+
+if _name_ == "_main_":
+    main(
